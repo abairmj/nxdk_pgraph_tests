@@ -2,7 +2,6 @@
 
 #include <pbkit/pbkit.h>
 
-#include "../pbkit_ext.h"
 #include "../test_host.h"
 #include "debug_output.h"
 #include "shaders/precalculated_vertex_shader.h"
@@ -26,33 +25,10 @@ void MaterialTests::Initialize() {
 
   CreateGeometry();
 
-  auto p = pb_begin();
   MATRIX matrix;
   matrix_unit(matrix);
-  p = pb_push_transposed_matrix(p, NV20_TCL_PRIMITIVE_3D_MODELVIEW_MATRIX, matrix);
-
-  matrix[_11] = 1;  // 0x3F800000
-  matrix[_12] = 0;  // 0x0
-  matrix[_13] = 0;  // 0x0
-  matrix[_14] = 0;  // 0x0
-  matrix[_21] = 0;  // 0x0
-  matrix[_22] = 1;  // 0x3F800000
-  matrix[_23] = 0;  // 0x0
-  matrix[_24] = 0;  // 0x0
-  matrix[_31] = 0;  // 0x0
-  matrix[_32] = 0;  // 0x0
-  matrix[_33] = 1;  // 0x3F800000
-  matrix[_34] = 0;  // 0x0
-  p = pb_push_4x3_matrix(p, NV20_TCL_PRIMITIVE_3D_INVERSE_MODELVIEW_MATRIX, matrix);
-
-  matrix_unit(matrix);
-  p = pb_push_transposed_matrix(p, NV20_TCL_PRIMITIVE_3D_PROJECTION_MATRIX, matrix);
-
-  p = pb_push1(p, NV097_SET_TRANSFORM_PROGRAM_START, 0);
-  p = pb_push1(p, NV097_SET_TRANSFORM_EXECUTION_MODE, 0x4);
-  p = pb_push1(p, NV097_SET_TRANSFORM_PROGRAM_CXT_WRITE_EN, 0x0);
-  p = pb_push1(p, NV097_SET_TRANSFORM_CONSTANT_LOAD, 0x0);
-  pb_end(p);
+  host_.SetFixedFunctionModelViewMatrix(matrix);
+  host_.SetFixedFunctionProjectionMatrix(matrix);
 }
 
 void MaterialTests::Deinitialize() {
@@ -78,7 +54,6 @@ void MaterialTests::CreateGeometry() {
   Color lr{0.0, 0.0, 1.0, 1.0};
   Color ur{0.5, 0.5, 0.5, 1.0};
 
-  uint32_t idx = 0;
   buffer->DefineQuad(0, left + 10, top + 4, mid_width + 10, bottom - 10, 10.0f, 10.0f, 10.0f, 10.0f, ul, ll, lr, ur);
   // Point normals for half the quad away from the camera.
   Vertex* v = buffer->Lock();
@@ -87,6 +62,12 @@ void MaterialTests::CreateGeometry() {
   v[2].normal[2] = -1.0f;
   buffer->Unlock();
 
+  ul.SetGrey(0.5);
+  ul.a = 1.0f;
+  ll.SetGrey(1.0);
+  ll.a = 1.0f;
+  ur.SetRGB(0.8f, 0.3f, 0.8f);
+  lr.SetRGB(0.3f, 0.8f, 0.8f);
   buffer->DefineQuad(1, mid_width - 10, top + 4, right - 10, bottom - 10, 10.0f, 10.0f, 10.0f, 10.0f, ul, ll, lr, ur);
 }
 
