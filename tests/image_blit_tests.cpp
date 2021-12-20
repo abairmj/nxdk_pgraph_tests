@@ -27,8 +27,8 @@ static constexpr uint32_t SUBCH_CLASS_12 = SUBCH_CLASS_19 + 1;
 // Subchannel reserved for interaction with the class 72 channel.
 static constexpr uint32_t SUBCH_CLASS_72 = SUBCH_CLASS_12 + 1;
 
-#define SOURCE_X 8
-#define SOURCE_Y 8
+#define START_X 8
+#define START_Y 8
 #define SOURCE_WIDTH 128
 #define SOURCE_HEIGHT 128
 #define DESTINATION_X 256
@@ -206,7 +206,7 @@ void ImageBlitTests::Test(const BlitTest& test) {
 
   ImageBlit(test.blit_operation, test.beta, image_src_dma_ctx_.ChannelID,
             11,  // DMA channel 11 - 0x1117
-            test.buffer_color_format, image_pitch_, 4 * host_.GetFramebufferWidth(), 0, SOURCE_X, SOURCE_Y, 0,
+            test.buffer_color_format, image_pitch_, 4 * host_.GetFramebufferWidth(), 0, START_X, START_Y, 0,
             DESTINATION_X, DESTINATION_Y, SOURCE_WIDTH, SOURCE_HEIGHT, clip_x, clip_y, clip_w, clip_h);
 
   std::string op_name = OperationName(test.blit_operation);

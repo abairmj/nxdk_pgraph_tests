@@ -16,11 +16,13 @@
 
 #include "test_driver.h"
 #include "test_host.h"
+
 #include "tests/depth_format_tests.h"
 #include "tests/front_face_tests.h"
 #include "tests/image_blit_tests.h"
 #include "tests/material_tests.h"
 #include "tests/texture_format_tests.h"
+#include "tests/two_d_primitive_tests.h"
 
 #ifdef DEVKIT
 static constexpr const char *kOutputDirectory = "e:\\DEVKIT\\nxdk_pgraph_tests";
@@ -95,6 +97,10 @@ static void register_suites(TestHost &host, std::vector<std::shared_ptr<TestSuit
   {
     auto suite = std::make_shared<ImageBlitTests>(host, kOutputDirectory);
     test_suites.push_back(std::dynamic_pointer_cast<ImageBlitTests>(suite));
+  }
+  {
+    auto suite = std::make_shared<TwoDPrimitiveTests>(host, kOutputDirectory);
+    test_suites.push_back(std::dynamic_pointer_cast<TwoDPrimitiveTests>(suite));
   }
   {
     auto suite = std::make_shared<TextureFormatTests>(host, kOutputDirectory);
