@@ -27,6 +27,7 @@ class TwoDPrimitiveTests : public TestSuite {
   static std::string MakeTestName(const BlitTest& test);
 
   struct s_CtxDma solid_lin_ctx_ {};
+  struct s_CtxDma surface_destination_ctx_ {};
 };
 
 #endif  // NXDK_PGRAPH_TESTS_2D_PRIMITIVE_TESTS_H

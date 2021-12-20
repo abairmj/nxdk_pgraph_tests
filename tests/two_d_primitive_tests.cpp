@@ -19,12 +19,12 @@
 #define SUBCH_CLASS_62 SUBCH_4
 
 static constexpr uint32_t SUBCH_CLASS_5C = kNextSubchannel;
+static constexpr uint32_t SUBCH_CLASS_42 = SUBCH_CLASS_5C + 1;
 
 static constexpr uint32_t kStartX = 25;
 static constexpr uint32_t kStartY = 50;
 static constexpr uint32_t kEndX = 100;
 static constexpr uint32_t kEndY = 100;
-
 
 static std::string OperationName(uint32_t operation);
 static std::string ColorFormatName(uint32_t format);
@@ -34,7 +34,8 @@ static constexpr TwoDPrimitiveTests::BlitTest kTests[] = {
 
 };
 
-TwoDPrimitiveTests::TwoDPrimitiveTests(TestHost& host, std::string output_dir) : TestSuite(host, std::move(output_dir)) {
+TwoDPrimitiveTests::TwoDPrimitiveTests(TestHost& host, std::string output_dir)
+    : TestSuite(host, std::move(output_dir)) {
   for (auto test : kTests) {
     std::string name = MakeTestName(test);
 
@@ -48,18 +49,22 @@ void TwoDPrimitiveTests::Initialize() {
 
   auto channel = kNextContextChannel;
 
-  pb_create_gr_ctx(channel, 0x5C, &solid_lin_ctx_);
+  pb_create_gr_ctx(channel++, 0x5C, &solid_lin_ctx_);
   pb_bind_channel(&solid_lin_ctx_);
   pb_bind_subchannel(SUBCH_CLASS_5C, &solid_lin_ctx_);
+
+  pb_create_gr_ctx(channel++, NV04_CONTEXT_SURFACES_2D, &surface_destination_ctx_);
+  pb_bind_channel(&surface_destination_ctx_);
+  pb_bind_subchannel(SUBCH_CLASS_42, &surface_destination_ctx_);
 
   // set up to not have shader
   // vertex shader (transform shader)..
   // fragment or pixel shader (color from triangle)..
   host_.SetShaderProgram(nullptr);
-
 }
 
-//void TwoDPrimitiveTests::ImageBlit(uint32_t operation, uint32_t beta, uint32_t source_channel, uint32_t destination_channel,
+// void TwoDPrimitiveTests::ImageBlit(uint32_t operation, uint32_t beta, uint32_t source_channel, uint32_t
+// destination_channel,
 //                               uint32_t surface_format, uint32_t source_pitch, uint32_t destination_pitch,
 //                               uint32_t source_offset, uint32_t source_x, uint32_t source_y,
 //                               uint32_t destination_offset, uint32_t destination_x, uint32_t destination_y,
@@ -109,23 +114,23 @@ void TwoDPrimitiveTests::Initialize() {
 void TwoDPrimitiveTests::Test(const BlitTest& test) {
   host_.PrepareDraw(0xFF440011);
 
-
-//  uint32_t clip_w = host_.GetFramebufferWidth();
-//  uint32_t clip_h = host_.GetFramebufferHeight();
-//
-//  ImageBlit(test.blit_operation, test.beta, image_src_dma_ctx_.ChannelID,
-//            11,  // DMA channel 11 - 0x1117
-//            test.buffer_color_format, image_pitch_, 4 * host_.GetFramebufferWidth(), 0, START_X, START_Y, 0,
-//            DESTINATION_X, DESTINATION_Y, SOURCE_WIDTH, SOURCE_HEIGHT, clip_x, clip_y, clip_w, clip_h);
-
   auto p = pb_begin();
-  p = pb_push1_to (SUBCH_CLASS_5C, p,  NV04_SOLID_LINE_OPERATION, 0x03);
-  p = pb_push1_to (SUBCH_CLASS_5C, p,  NV04_SOLID_LINE_COLOR_VALUE, 0xFFFFFF);
-  p = pb_push1_to (SUBCH_CLASS_5C, p,  NV04_SOLID_LINE_SURFACE, 11);
-  p = pb_push1_to (SUBCH_CLASS_5C, p,  NV04_SOLID_LINE_COLOR_FORMAT, 0x3);
 
-  p = pb_push1_to (SUBCH_CLASS_5C, p,   NV04_SOLID_LINE_START, (kStartY << 16) | kStartX);
-  p = pb_push1_to (SUBCH_CLASS_5C, p,   NV04_SOLID_LINE_END, (kEndY <<16) | kEndX);
+  p = pb_push1_to(SUBCH_CLASS_42, p, NV04_CONTEXT_SURFACES_2D_SET_DMA_IMAGE_DST, /*dst_dma_ctx_.ChannelID*/ 9);
+#define NV042_SET_PITCH 0x304
+  p = pb_push1_to(SUBCH_CLASS_42, p, NV042_SET_PITCH, (pb_back_buffer_pitch() << 16) | pb_back_buffer_pitch());
+
+#define NV042_SET_COLOR_FORMAT NV04_CONTEXT_SURFACES_2D_FORMAT
+#define NV042_SET_COLOR_FORMAT_LE_A8R8G8B8 0x0A
+  p = pb_push1_to(SUBCH_CLASS_42, p, NV042_SET_COLOR_FORMAT, NV042_SET_COLOR_FORMAT_LE_A8R8G8B8);
+
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_OPERATION, 0x03);
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_COLOR_VALUE, 0xFFFFFF);
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_SURFACE, surface_destination_ctx_.ChannelID);
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_COLOR_FORMAT, 0x3);
+
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_START, (kStartY << 16) | kStartX);
+  p = pb_push1_to(SUBCH_CLASS_5C, p, NV04_SOLID_LINE_END, (kEndY << 16) | kEndX);
 
   pb_end(p);
   std::string op_name = OperationName(test.blit_operation);
@@ -134,10 +139,10 @@ void TwoDPrimitiveTests::Test(const BlitTest& test) {
   pb_print("BufFmt: %s\n", color_format_name.c_str());
 
   pb_draw_text_screen();
-//  std::string name = MakeTestName(test);
+  //  std::string name = MakeTestName(test);
 
   host_.FinishDraw();
-  //host_.FinishDrawAndSave(output_dir_.c_str(), name.c_str());
+  // host_.FinishDrawAndSave(output_dir_.c_str(), name.c_str());
 }
 
 std::string TwoDPrimitiveTests::MakeTestName(const BlitTest& test) {
